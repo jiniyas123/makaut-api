@@ -34,11 +34,11 @@ app.get('/:roll/:sem', function (req, res) {
         res.end(JSON.stringify(responseObject, null, 2));
     });
 });
-app.get('/analytics/cgpa/:roll/:sem', function (req, res) {
+app.get('/analytics/cgpa/:roll/:sem', function (req, res, next) {
     let roll = req.params.roll;
     let sem = req.params.sem;
     if (!check.isRoll(roll) || !check.isSem(sem)) {
-        res.end();
+        next();
         return;
     }
     sem = check.getSem(sem);
@@ -59,11 +59,11 @@ app.get('/analytics/cgpa/:roll/:sem', function (req, res) {
         });
 
 });
-app.get('/analytics/subjects/:roll/:sem', function (req, res) {
+app.get('/analytics/subjects/:roll/:sem', function (req, res, next) {
     let roll = req.params.roll;
     let sem = req.params.sem;
     if (!check.isRoll(roll) || !check.isSem(sem)) {
-        res.end();
+        next();
         return;
     }
     sem = check.getSem(sem);
@@ -121,6 +121,7 @@ app.get('/:rollbeg/:rollend/:sem', function (req, res, next) {
     if (rollBeg > rollEnd)
         [rollBeg, rollEnd] = [rollEnd, rollBeg]
     if (!check.isRoll(rollBeg) || !check.isRoll(rollEnd) || (rollEnd - rollBeg) > 120 || !check.isSem(sem)) {
+        next();
         return;
     }
     sem = check.getSem(sem);
@@ -238,11 +239,6 @@ async function sendResponse(semList, roll, backUp, callback) {
 
 app.get('/restart', function (req, res) {
     process.exit(1);
-});
-app.get('/reset', function (req, res) {
-    csrfToken = { id: null, count: 0 };
-    logger.log(csrfToken)
-    res.send("Done! " + csrfToken);
 });
 app.use(function (req, res) {
 
