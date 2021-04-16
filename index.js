@@ -34,7 +34,7 @@ app.get('/:roll/:sem', function (req, res) {
         res.end(JSON.stringify(responseObject, null, 2));
     });
 });
-app.get('/analytics/:roll/:sem', function (req, res) {
+app.get('/analytics/cgpa/:roll/:sem', function (req, res) {
     let roll = req.params.roll;
     let sem = req.params.sem;
     if (!check.isRoll(roll) || !check.isSem(sem)) {
@@ -44,10 +44,40 @@ app.get('/analytics/:roll/:sem', function (req, res) {
     sem = check.getSem(sem);
     sendSingleResponse(roll, sem)
         .then(responseObject => {
-            DB.fetchAnalytics(responseObject, analObj => {
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(analObj, null, 2));
-            });
+            if (responseObject.roll)
+                DB.fetchAnalyticsCGPA(responseObject.results, responseObject.roll, analObj => {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(analObj, null, 2));
+                });
+            else {
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ info: "roll number and semester combination not valid", error: '404' }, null, 2));
+            }
+        }).catch(responseObject => {
+            res.writeHead(206, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(responseObject, null, 2));
+        });
+
+});
+app.get('/analytics/subjects/:roll/:sem', function (req, res) {
+    let roll = req.params.roll;
+    let sem = req.params.sem;
+    if (!check.isRoll(roll) || !check.isSem(sem)) {
+        res.end();
+        return;
+    }
+    sem = check.getSem(sem);
+    sendSingleResponse(roll, sem)
+        .then(responseObject => {
+            if (responseObject.roll)
+                DB.fetchAnalytics(responseObject, analObj => {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(analObj, null, 2));
+                });
+            else {
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ info: "roll number and semester combination not valid", error: '404' }, null, 2));
+            }
         }).catch(responseObject => {
             res.writeHead(206, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify(responseObject, null, 2));
@@ -167,7 +197,7 @@ async function sendResponse(semList, roll, backUp, callback) {
             if (backUp[roll] && backUp[roll][sem] && !backUp[roll][sem].info) {
                 callBackCount++;
                 responseObject = backUp[roll];
-                if(responseObject.results)
+                if (responseObject.results)
                     responseObject.results = sorted(responseObject.results)
                 if (callBackCount == semList.length) {
                     callback(sorted(responseObject));
@@ -183,9 +213,9 @@ async function sendResponse(semList, roll, backUp, callback) {
                     if (data.roll && !responseObject.roll) responseObject.roll = data.roll;
                     if (data.registration && !responseObject.registration) responseObject.registration = data.registration;
                     if (data.collegeName && !responseObject.collegeName) responseObject.collegeName = data.collegeName;
-                    if (data.results && !responseObject.results) 
+                    if (data.results && !responseObject.results)
                         responseObject.results = data.results;
-                    else if(responseObject.results && data.results)
+                    else if (responseObject.results && data.results)
                         responseObject.results = Object.assign(responseObject.results, data.results);
                     if (!data.error)
                         responseObject[sem] = data[sem];
@@ -195,7 +225,7 @@ async function sendResponse(semList, roll, backUp, callback) {
                     //this.reinitCSRF();
                     //sendResponse([sem], roll, callback);
                     if (callBackCount == semList.length) {
-                        if(responseObject.results)
+                        if (responseObject.results)
                             responseObject.results = sorted(responseObject.results);
                         callback(sorted(responseObject));
                     }

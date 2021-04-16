@@ -32,7 +32,7 @@ class MongoStore {
         const invSem = getSemInv(sems)
         for (let i = 0; i < invSem.length; i++) {
             proj[invSem[i]] = 0;
-            proj['results.'+invSem[i]] = 0;
+            proj['results.' + invSem[i]] = 0;
         }
         this.gradeDB.findOne({ '_id': roll }, { projection: proj })
             .then(results => {
@@ -44,23 +44,25 @@ class MongoStore {
                 callback([]);
             });
     }
-    async update(jsonObj,sem) {
+    async update(jsonObj, sem) {
         if (!this.client || !this.client.isConnected())
             await this.init();
         await this.gradeDB.
-            updateOne({ '_id': parseInt(jsonObj.roll) }, 
-            { $set: {
-                name:jsonObj.name,
-                roll:jsonObj.roll,
-                collegeName:jsonObj.collegeName,
-                registration:jsonObj.registration,
-                ['results.'+sem]:jsonObj.results[sem],
-                [sem]: jsonObj[sem]
-            } }, 
-            { upsert: true }, 
-            (err, res) => {
-                //console.log(res);
-            })
+            updateOne({ '_id': parseInt(jsonObj.roll) },
+                {
+                    $set: {
+                        name: jsonObj.name,
+                        roll: jsonObj.roll,
+                        collegeName: jsonObj.collegeName,
+                        registration: jsonObj.registration,
+                        ['results.' + sem]: jsonObj.results[sem],
+                        [sem]: jsonObj[sem]
+                    }
+                },
+                { upsert: true },
+                (err, res) => {
+                    //console.log(res);
+                })
     }
     async fetchRange(start, end, sems, callback) {
         if (!this.client || !this.client.isConnected())
@@ -69,7 +71,7 @@ class MongoStore {
         const invSem = getSemInv(sems)
         for (let i = 0; i < invSem.length; i++) {
             proj[invSem[i]] = 0;
-            proj['results.'+invSem[i]] = 0;
+            proj['results.' + invSem[i]] = 0;
         }
         await this.gradeDB.find(
             {
@@ -88,6 +90,47 @@ class MongoStore {
                 callback([]);
             });
     }
+    async fetchAnalyticsCGPA(inputObj, roll, callback) {
+        logger.log("AnalyticsCGPA request",inputObj, roll)
+        if (!this.client || !this.client.isConnected())
+            await this.init();
+
+        let resObj = {}
+        /*this.gradeDB.aggregate([
+                {$match:{"SM02.BSCH201":{$exists:true}}},
+                {$project:{_id: 0,marks: "$SM02.BSCH201.CGPA"}}]).toArray().then(res=>{logger.log(res)});*/
+        for (let sem in inputObj) {
+            if (semList.includes(sem)) {
+                await this.countDistintCGPA(roll.substr(3, 3), sem).then(data => {
+                    resObj[sem] = data;
+                    //logger.log(data)
+                }).catch(info => {
+                    resObj[sem] = info;
+                })
+            }
+        }
+        callback(resObj)
+    }
+    async countDistintCGPA(courseCode, semCode) {
+        if (!this.client || !this.client.isConnected())
+            await this.init();
+        /*logger.log(JSON.stringify({ roll: { $regex: '...' + courseCode + '....' } }))
+        logger.log(JSON.stringify({ $group: { _id: '$results.' + semCode, count: { $sum: 1 } } }))
+        logger.log(JSON.stringify({ $project: { _id: 0, CGPA: '$_id', count: 1 } }))*/
+        return new Promise((resolve, reject) => {
+            this.gradeDB.aggregate([{
+                $match: {
+                    roll: { $regex: '...' + courseCode + '....' },
+                    ['results.' + semCode]: { $exists: true }
+                }
+            },
+            { $group: { _id: '$results.' + semCode, count: { $sum: 1 } } },
+            { $project: { _id: 0, CGPA: '$_id', count: 1 } }
+            ]).toArray(function (err, data) {
+                err ? resolve([]) : resolve(data);
+            });
+        });
+    }
     async fetchAnalytics(resultObject, callback) {
         if (!this.client || !this.client.isConnected())
             await this.init();
@@ -99,13 +142,13 @@ class MongoStore {
 
         for (let key in resultObject) {
             if (semList.includes(key)) {
-                
+
                 for (let subCode in resultObject[key]) {
                     //logger.log(subCode);
-                    if(subCode !== "info"){
-                        if(!resObj[key]) 
-                            resObj[key]={};
-                        await this.countDistintMarks(key, subCode).then(data=>{
+                    if (subCode !== "info") {
+                        if (!resObj[key])
+                            resObj[key] = {};
+                        await this.countDistintMarks(key, subCode).then(data => {
                             resObj[key][subCode] = data;
                             //logger.log(data)
                         }).catch(info => {
@@ -126,7 +169,7 @@ class MongoStore {
                 { $group: { _id: '$' + semCode + '.' + subCode + '.CGPA', count: { $sum: 1 } } },
                 { $project: { _id: 0, CGPA: '$_id', count: 1 } }
             ]).toArray(function (err, data) {
-                err ? reject({}) : resolve(data);
+                err ? reject([]) : resolve(data);
             });
         });
     }
