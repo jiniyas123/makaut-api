@@ -47,22 +47,25 @@ class MongoStore {
     async update(jsonObj, sem) {
         if (!this.client || !this.client.isConnected())
             await this.init();
-        await this.gradeDB.
-            updateOne({ '_id': parseInt(jsonObj.roll) },
-                {
-                    $set: {
-                        name: jsonObj.name,
-                        roll: jsonObj.roll,
-                        collegeName: jsonObj.collegeName,
-                        registration: jsonObj.registration,
-                        ['results.' + sem]: jsonObj.results[sem],
-                        [sem]: jsonObj[sem]
-                    }
-                },
-                { upsert: true },
-                (err, res) => {
-                    //console.log(res);
-                })
+        return new Promise((resolve, reject) => {
+            this.gradeDB.
+                updateOne({ '_id': parseInt(jsonObj.roll) },
+                    {
+                        $set: {
+                            name: jsonObj.name,
+                            roll: jsonObj.roll,
+                            collegeName: jsonObj.collegeName,
+                            registration: jsonObj.registration,
+                            ['results.' + sem]: jsonObj.results[sem],
+                            [sem]: jsonObj[sem]
+                        }
+                    },
+                    { upsert: true },
+                    (err, res) => {
+                        //console.log(res);
+                    }).then(resolve()).catch(resolve());
+            ;
+        })
     }
     async fetchRange(start, end, sems, callback) {
         if (!this.client || !this.client.isConnected())
@@ -91,7 +94,7 @@ class MongoStore {
             });
     }
     async fetchAnalyticsCGPA(inputObj, roll, callback) {
-        logger.log("AnalyticsCGPA request",inputObj, roll)
+        logger.log("AnalyticsCGPA request", inputObj, roll)
         if (!this.client || !this.client.isConnected())
             await this.init();
 

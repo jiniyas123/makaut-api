@@ -68,7 +68,7 @@ module.exports.getTextArray = (pdf,sem) => {
     resObj.results = {[sem]:(totalMarks/fullMarks).toFixed(2)}
     //const fs = require('fs')
     //fs.writeFile('result.json', JSON.stringify(pdf), 'utf8', ()=>{console.log("SAVED");});
-    DB.update(resObj,sem);
-    //DB.close();
+    DB.update(resObj,sem)
+    .finally(()=>{DB.close()});
     return resObj;
 }
