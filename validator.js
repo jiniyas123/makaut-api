@@ -1,5 +1,5 @@
 module.exports.isRoll = (num)=>{
-    return /^\d+$/.test(num) && num.length == 11;
+    return /^\d+$/.test(num);
 }
 module.exports.isSem = (num)=>{
     return /^([1-8]*|0)$/.test(num);

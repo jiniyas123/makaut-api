@@ -1,14 +1,14 @@
 const express = require('./node_modules/express')
 const check = require('./validator');
 const exam = require('./exam');
-const { MongoStore } = require('./mongoStore');
+const DB = require('./mongoStore')
 const { logger } = require('./logger');
 const request = require('request');
 let csrfToken = { id: null, count: 0 }
 const port = process.env.PORT || 8080;
 const timeout = 29000;
 const app = express();
-const DB = new MongoStore();
+
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     next();

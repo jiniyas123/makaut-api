@@ -1,8 +1,7 @@
-const {MongoStore} = require('./mongoStore')
+const DB = require('./mongoStore')
 const { logger } = require('./logger');
 
 module.exports.getTextArray = (pdf,sem) => {
-    const DB = new MongoStore();
     let textArray = [];
     pdf.forEach((val => {
         if(val.R && val.R.length > 0){
@@ -68,7 +67,6 @@ module.exports.getTextArray = (pdf,sem) => {
     resObj.results = {[sem]:(totalMarks/fullMarks).toFixed(2)}
     //const fs = require('fs')
     //fs.writeFile('result.json', JSON.stringify(pdf), 'utf8', ()=>{console.log("SAVED");});
-    DB.update(resObj,sem)
-    .finally(()=>{DB.close()});
+    DB.update(resObj,sem);
     return resObj;
 }
